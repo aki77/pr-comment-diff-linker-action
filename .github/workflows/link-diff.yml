@@ -1,0 +1,25 @@
+name: Link Diff in PR Comment
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  link-diff:
+    if: github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Link diff files in comment
+        uses: ./
+        with:
+          pr-number: ${{ github.event.issue.number }}
+          comment-id: ${{ github.event.comment.id }}
+          token: ${{ secrets.GITHUB_TOKEN }}
