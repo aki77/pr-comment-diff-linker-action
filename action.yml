@@ -54,7 +54,7 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
       run: |
-        COMMENT_DATA=$(gh api "/repos/:owner/:repo/pulls/comments/${{ inputs.comment-id }}")
+        COMMENT_DATA=$(gh api "/repos/:owner/:repo/issues/comments/${{ inputs.comment-id }}")
         COMMENT_BODY=$(echo "$COMMENT_DATA" | jq -r '.body')
         
         # Save comment body to a temporary file
@@ -91,7 +91,7 @@ runs:
       run: |
         echo "Updating comment..."
         UPDATED_COMMENT=$(cat /tmp/updated_comment.txt)
-        gh api --method PATCH "/repos/:owner/:repo/pulls/comments/${{ inputs.comment-id }}" \
+        gh api --method PATCH "/repos/:owner/:repo/issues/comments/${{ inputs.comment-id }}" \
           --field body="$UPDATED_COMMENT"
         echo "Comment updated successfully"
 
