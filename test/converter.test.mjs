@@ -137,3 +137,36 @@ test('convertFileReferences should handle empty PR files', () => {
     assert.strictEqual(changesMade, false);
     assert.strictEqual(updatedCommentBody, commentBody);
 });
+
+test('convertFileReferences should not convert files inside existing markdown links', () => {
+    const commentBody = 'Check [src/components/Button.tsx:25](https://example.com/existing-link) and utils/helper.js:10';
+    const { updatedCommentBody, changesMade } = convertFileReferences(commentBody, mockPrFiles);
+    
+    assert.strictEqual(changesMade, true);
+    assert.strictEqual(
+        updatedCommentBody,
+        'Check [src/components/Button.tsx:25](https://example.com/existing-link) and [utils/helper.js:10](https://github.com/owner/repo/pull/123/files#diff-xyz789R10)'
+    );
+});
+
+test('convertFileReferences should not convert files inside existing markdown links with code formatting', () => {
+    const commentBody = 'Check [`utils/helper.js:10`](https://example.com/existing-link) and src/components/Button.tsx:25';
+    const { updatedCommentBody, changesMade } = convertFileReferences(commentBody, mockPrFiles);
+    
+    assert.strictEqual(changesMade, true);
+    assert.strictEqual(
+        updatedCommentBody,
+        'Check [`utils/helper.js:10`](https://example.com/existing-link) and [src/components/Button.tsx:25](https://github.com/owner/repo/pull/123/files#diff-abc123R25)'
+    );
+});
+
+test('convertFileReferences should handle multiple existing links', () => {
+    const commentBody = 'Check [src/components/Button.tsx:25](https://example.com/link1) and [utils/helper.js:10](https://example.com/link2) and README.md';
+    const { updatedCommentBody, changesMade } = convertFileReferences(commentBody, mockPrFiles);
+    
+    assert.strictEqual(changesMade, true);
+    assert.strictEqual(
+        updatedCommentBody,
+        'Check [src/components/Button.tsx:25](https://example.com/link1) and [utils/helper.js:10](https://example.com/link2) and [README.md](https://github.com/owner/repo/pull/123/files#diff-readme123)'
+    );
+});
