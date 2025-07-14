@@ -1,6 +1,9 @@
 name: 'PR Comment Diff Linker'
 description: 'Convert file references in PR comments to diff page links'
 author: 'aki77'
+branding:
+  icon: git-pull-request
+  color: orange
 
 inputs:
   pr-number:
@@ -24,17 +27,17 @@ runs:
           echo "Error: GitHub CLI (gh) is not installed"
           exit 1
         fi
-        
+
         if ! command -v jq &> /dev/null; then
           echo "Error: jq is not installed"
           exit 1
         fi
-        
+
         if ! command -v shasum &> /dev/null; then
           echo "Error: shasum is not installed"
           exit 1
         fi
-        
+
         echo "All dependencies are available"
 
     - name: Install gh-pr-files extension
@@ -56,7 +59,7 @@ runs:
       run: |
         COMMENT_DATA=$(gh api "/repos/:owner/:repo/issues/comments/${{ inputs.comment-id }}")
         COMMENT_BODY=$(echo "$COMMENT_DATA" | jq -r '.body')
-        
+
         # Save comment body to a temporary file
         echo "$COMMENT_BODY" > /tmp/original_comment.txt
         echo "Original comment retrieved and saved"
@@ -70,10 +73,10 @@ runs:
       run: |
         # Convert the comment body using our script
         UPDATED_COMMENT=$(cat /tmp/original_comment.txt | ${{ github.action_path }}/convert-diff-links.mjs)
-        
+
         # Save updated comment to temporary file
         echo "$UPDATED_COMMENT" > /tmp/updated_comment.txt
-        
+
         # Check exit status to determine if changes were made
         if [ $? -eq 0 ]; then
           echo "Comment conversion completed with changes"
