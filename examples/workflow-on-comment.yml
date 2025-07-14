@@ -7,8 +7,8 @@ on:
 
 jobs:
   link-diff:
-    # Only run on pull request comments
-    if: github.event.issue.pull_request
+    # Only run on pull request comments from claude user
+    if: github.event.issue.pull_request && github.event.comment.user.login == 'claude'
     runs-on: ubuntu-latest
     
     # Required permissions
