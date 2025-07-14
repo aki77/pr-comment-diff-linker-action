@@ -1,0 +1,12 @@
+{
+  "name": "pr-comment-diff-linker-action",
+  "version": "1.0.0",
+  "description": "A GitHub Action that automatically converts file reference patterns in PR comments to links to GitHub diff screens",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": ["github-action", "pr", "comment", "diff", "links"],
+  "author": "aki77",
+  "license": "MIT"
+}

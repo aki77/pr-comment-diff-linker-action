@@ -1,0 +1,33 @@
+# Example workflow for manual execution
+name: Manual Link Diff
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: 'PR Number'
+        required: true
+        type: string
+      comment-id:
+        description: 'Comment ID'
+        required: true
+        type: string
+
+jobs:
+  link-diff:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Link diff files
+        uses: aki77/pr-comment-diff-linker-action@v1
+        with:
+          pr-number: ${{ github.event.inputs.pr-number }}
+          comment-id: ${{ github.event.inputs.comment-id }}
+          token: ${{ secrets.GITHUB_TOKEN }}

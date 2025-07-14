@@ -1,0 +1,102 @@
+name: 'PR Comment Diff Linker'
+description: 'Convert file references in PR comments to diff page links'
+author: 'aki77'
+
+inputs:
+  pr-number:
+    description: 'Pull request number'
+    required: true
+  comment-id:
+    description: 'Comment ID to update'
+    required: true
+  token:
+    description: 'GitHub token'
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check dependencies
+      shell: bash
+      run: |
+        if ! command -v gh &> /dev/null; then
+          echo "Error: GitHub CLI (gh) is not installed"
+          exit 1
+        fi
+        
+        if ! command -v jq &> /dev/null; then
+          echo "Error: jq is not installed"
+          exit 1
+        fi
+        
+        if ! command -v shasum &> /dev/null; then
+          echo "Error: shasum is not installed"
+          exit 1
+        fi
+        
+        echo "All dependencies are available"
+
+    - name: Install gh-pr-files extension
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+      run: |
+        if ! gh extension list | grep -q "aki77/gh-pr-files"; then
+          echo "Installing gh-pr-files extension..."
+          gh extension install aki77/gh-pr-files
+        else
+          echo "gh-pr-files extension is already installed"
+        fi
+
+    - name: Get comment content
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+      run: |
+        COMMENT_DATA=$(gh api "/repos/:owner/:repo/pulls/comments/${{ inputs.comment-id }}")
+        COMMENT_BODY=$(echo "$COMMENT_DATA" | jq -r '.body')
+        
+        # Save comment body to a temporary file
+        echo "$COMMENT_BODY" > /tmp/original_comment.txt
+        echo "Original comment retrieved and saved"
+
+    - name: Convert file references to diff links
+      id: convert-links
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+      run: |
+        # Convert the comment body using our script
+        UPDATED_COMMENT=$(cat /tmp/original_comment.txt | ${{ github.action_path }}/convert-diff-links.mjs)
+        
+        # Save updated comment to temporary file
+        echo "$UPDATED_COMMENT" > /tmp/updated_comment.txt
+        
+        # Check exit status to determine if changes were made
+        if [ $? -eq 0 ]; then
+          echo "Comment conversion completed with changes"
+          echo "changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "Comment conversion completed without changes"
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Update comment
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+      if: steps.convert-links.outputs.changed == 'true'
+      run: |
+        echo "Updating comment..."
+        UPDATED_COMMENT=$(cat /tmp/updated_comment.txt)
+        gh api --method PATCH "/repos/:owner/:repo/pulls/comments/${{ inputs.comment-id }}" \
+          --field body="$UPDATED_COMMENT"
+        echo "Comment updated successfully"
+
+    - name: Cleanup temporary files
+      shell: bash
+      run: |
+        rm -f /tmp/original_comment.txt /tmp/updated_comment.txt
+        echo "Temporary files cleaned up"
